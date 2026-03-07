@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ημερολόγιο Βαρδιών v33</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#223247">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+body{margin:0;font-family:Arial;background:#223247;color:#fff}
+.wrap{max-width:1100px;margin:auto;padding:14px 14px 190px}
+.panel{background:#2b3d54;border-radius:20px;padding:14px}
+.header{display:flex;justify-content:space-between;align-items:center}
+.title{font-size:28px;font-weight:900}
+.nav{background:#fff;border:none;border-radius:50%;width:40px;height:40px}
+.controls{margin:10px 0;display:flex;gap:8px;flex-wrap:wrap}
+button,input{border:none;border-radius:10px;padding:10px;font-weight:700}
+.weekdays,.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.weekday{background:#324762;padding:8px;border-radius:10px;text-align:center}
+.calendar{background:#e9f7ef;padding:8px;border-radius:16px}
+.day{background:#fff;color:#111;border-radius:14px;padding:6px;min-height:90px;display:flex;flex-direction:column;gap:6px}
+.day.weekend{background:#8e97a1}
+.day.night{background:#2f3b57;color:#fff}
+.day.five{background:#facc15}
+.topline{display:flex;justify-content:space-between;align-items:flex-start;font-weight:800}
+.shift{border-radius:12px;padding:8px;text-align:center;font-weight:800}
+.shift.P{background:#ff1026;color:#fff}
+.shift.A{background:#ee9574}
+.shift.N{background:#3a4461;color:#fff}
+.shift.AD{background:#69bbe0}
+.shift.R{background:#e6c6d7}
+.shift.PN{background:linear-gradient(90deg,#ff1026 50%,#3a4461 50%);color:#fff}
+.note{font-size:11px;line-height:1.2;word-break:break-word}
+.summary{background:#fff;color:#000;border-radius:16px;padding:12px;margin-top:10px}
+.sum1{background:#2f3b57;color:#fff;padding:10px;border-radius:10px;margin-bottom:6px}
+.sum2{background:#facc15;padding:10px;border-radius:10px;margin-bottom:6px}
+.sum3{background:#ddd;padding:10px;border-radius:10px}
+.section-title{font-weight:900;margin:18px 0 10px}
+.year-summary{background:#fff;color:#000;border-radius:16px;padding:12px;margin-top:10px}
+.year-row{padding:10px;border-radius:10px;margin-bottom:6px}
+.year-n{background:#2f3b57;color:#fff}
+.year-f{background:#facc15;color:#111}
+.year-t{background:#ddd;color:#111}
+.install-box{background:#e9f7ef;color:#111;border-radius:16px;padding:12px;margin-top:10px}
+.toolbar{position:fixed;bottom:10px;left:0;right:0;display:flex;justify-content:center}
+.tools{background:#c8102e;border-radius:30px;padding:12px;width:90%;max-width:720px}
+.grid{background:#fff;border-radius:20px;padding:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tool{border-radius:12px;padding:14px;text-align:center;font-weight:800;cursor:pointer}
+.A{background:#ee9574}
+.R{background:#e6c6d7}
+.N{background:#3a4461;color:#fff}
+.AD{background:#69bbe0}
+.P{background:#ff1026;color:#fff}
+.PN{background:linear-gradient(90deg,#ff1026 50%,#3a4461 50%);color:#fff}
+.NOTE{background:#c9cdf6}
+.modalbg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center}
+.modal{background:#fff;color:#000;border-radius:20px;padding:16px;width:90%;max-width:420px}
+.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
+.small{font-size:13px;opacity:.9}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<div class="panel">
+
+<div class="header">
+<button class="nav" onclick="prevMonth()">◀</button>
+<div id="title" class="title"></div>
+<button class="nav" onclick="nextMonth()">▶</button>
+</div>
+
+<div class="controls">
+<button onclick="openCopy(5)">Αντιγραφή 5</button>
+<button onclick="openCopy(10)">Αντιγραφή 10</button>
+<button onclick="clearMonth()">Σβήσιμο μήνα</button>
+</div>
+
+<div id="weekdays" class="weekdays"></div>
+<div id="calendar" class="calendar"></div>
+
+<div class="summary">
+<div id="nights" class="sum1"></div>
+<div id="fives" class="sum2"></div>
+<div id="total" class="sum3"></div>
+</div>
+
+<div class="section-title">Σύνολο έτους</div>
+<div class="year-summary">
+  <div id="yearNights" class="year-row year-n"></div>
+  <div id="yearFives" class="year-row year-f"></div>
+  <div id="yearTotal" class="year-row year-t"></div>
+</div>
+
+<div class="section-title">Εγκατάσταση σαν εφαρμογή</div>
+<div class="install-box">
+  <div id="installText">Άνοιξε το μενού του browser και πάτησε «Προσθήκη στην αρχική οθόνη» για εγκατάσταση.</div>
+  <div class="small" style="margin-top:8px">Μετά ανοίγει από εικονίδιο στο κινητό σαν εφαρμογή.</div>
+  <button id="installBtn" style="display:none;margin-top:10px">Εγκατάσταση εφαρμογής</button>
+</div>
+
+</div>
+</div>
+
+<div class="toolbar">
+<div class="tools">
+<div class="grid">
+<div class="tool NOTE" onclick="setTool('note')">Σημ.</div>
+<div class="tool A" onclick="setShift('Α')">Α</div>
+<div class="tool R" onclick="setShift('Ρ')">Ρ</div>
+<div class="tool N" onclick="setShift('Ν')">Ν</div>
+<div class="tool AD" onclick="setShift('ΑΔ')">Α/Δ</div>
+<div class="tool P" onclick="setShift('Π')">Π</div>
+<div class="tool PN" onclick="setShift('Π/Ν')">Π/Ν</div>
+<div class="tool" style="background:#eee" onclick="setShift('')">Σβήσ.</div>
+</div>
+</div>
+</div>
+
+<div id="modalbg" class="modalbg">
+<div class="modal">
+<h3 id="copytitle"></h3>
+<label>Από</label>
+<input id="from" type="date" style="width:100%"><br><br>
+<label>Έως</label>
+<input id="to" type="date" style="width:100%">
+<div class="actions">
+<button onclick="closeCopy()">Ακύρωση</button>
+<button onclick="doCopy()">OK</button>
+</div>
+</div>
+</div>
+
+<script>
+const STORE="vardies_v33";
+const weekdays=["ΔΕΥ","ΤΡΙ","ΤΕΤ","ΠΕΜ","ΠΑΡ","ΣΑΒ","ΚΥΡ"];
+const months=["ΙΑΝ","ΦΕΒ","ΜΑΡ","ΑΠΡ","ΜΑΙ","ΙΟΥΝ","ΙΟΥΛ","ΑΥΓ","ΣΕΠ","ΟΚΤ","ΝΟΕ","ΔΕΚ"];
+
+let today=new Date();
+let year=today.getFullYear();
+let month=today.getMonth();
+let data=JSON.parse(localStorage.getItem(STORE)||"{}");
+
+let selectedShift="";
+let currentTool="shift";
+let copyLen=5;
+let deferredPrompt=null;
+
+function key(d){return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
+function prevMonth(){month--;if(month<0){month=11;year--}render()}
+function nextMonth(){month++;if(month>11){month=0;year++}render()}
+function setShift(s){currentTool="shift";selectedShift=s}
+function setTool(t){currentTool=t}
+function mondayIndex(d){return(d.getDay()+6)%7} // Mon=0 ... Sun=6
+
+// Δευτέρα-Πέμπτη: Ν ή Π/Ν = νύχτα
+function nightPay(s,w){
+  return (s==="Ν"||s==="Π/Ν") && w<=3
+}
+
+// Παρασκευή: Ν ή Π/Ν = 5μερο
+// Σάββατο-Κυριακή: Α, Π, Ν, Π/Ν = 5μερο
+// ΑΔ και Ρ ποτέ δεν μετράνε
+function fivePay(s,w,day){
+  if(s==="ΑΔ" || s==="Ρ" || !s) return false
+  if(w===4 && (s==="Ν" || s==="Π/Ν")) return true
+  if(day===0 || day===6){
+    return ["Α","Π","Ν","Π/Ν"].includes(s)
+  }
+  return false
+}
+
+function shiftClass(s){
+if(s=="Π")return"P"
+if(s=="Α")return"A"
+if(s=="Ν")return"N"
+if(s=="ΑΔ")return"AD"
+if(s=="Ρ")return"R"
+if(s=="Π/Ν")return"PN"
+return""
+}
+
+function render(){
+
+document.getElementById("title").innerText=months[month]+" "+year
+
+const w=document.getElementById("weekdays")
+w.innerHTML=""
+weekdays.forEach(d=>{
+  let e=document.createElement("div")
+  e.className="weekday"
+  e.textContent=d
+  w.appendChild(e)
+})
+
+const cal=document.getElementById("calendar")
+cal.innerHTML=""
+
+let first=new Date(year,month,1)
+let start=(first.getDay()+6)%7
+for(let i=0;i<start;i++)cal.appendChild(document.createElement("div"))
+
+let last=new Date(year,month+1,0).getDate()
+let nights=0
+let fives=0
+
+for(let d=1;d<=last;d++){
+  let date=new Date(year,month,d)
+  let k=key(date)
+  let entry=data[k]||{}
+  let wd=mondayIndex(date)
+
+  let box=document.createElement("div")
+  box.className="day"
+
+  if(date.getDay()==0||date.getDay()==6)box.classList.add("weekend")
+  if(nightPay(entry.shift,wd)){box.classList.add("night");nights++}
+  else if(fivePay(entry.shift,wd,date.getDay())){box.classList.add("five");fives++}
+
+  box.onclick=()=>{
+    let obj=data[k]||{}
+    if(currentTool==="note"){
+      let txt=prompt("Σημείωση", obj.note||"")
+      if(txt!==null) obj.note=txt
+    } else {
+      if(obj.shift===selectedShift) obj.shift=""
+      else obj.shift=selectedShift
+    }
+    if(!obj.shift && !obj.note) delete data[k]
+    else data[k]=obj
+    localStorage.setItem(STORE,JSON.stringify(data))
+    render()
+  }
+
+  let top=document.createElement("div")
+  top.className="topline"
+  let left=document.createElement("div")
+  left.textContent=d
+  let right=document.createElement("div")
+  right.textContent=entry.note ? "✎" : ""
+  top.appendChild(left)
+  top.appendChild(right)
+
+  let s=document.createElement("div")
+  s.className="shift "+shiftClass(entry.shift||"")
+  s.textContent=entry.shift||""
+
+  let n=document.createElement("div")
+  n.className="note"
+  n.textContent=entry.note||""
+
+  box.appendChild(top)
+  box.appendChild(s)
+  box.appendChild(n)
+  cal.appendChild(box)
+}
+
+document.getElementById("nights").innerText="Νύχτες: "+nights+" × 20,35€ = "+(nights*20.35).toFixed(2)+"€"
+document.getElementById("fives").innerText="5μερα: "+fives+" × 36,06€ = "+(fives*36.06).toFixed(2)+"€"
+document.getElementById("total").innerText="Σύνολο: "+((nights*20.35)+(fives*36.06)).toFixed(2)+"€"
+
+renderYearSummary()
+}
+
+function renderYearSummary(){
+  let yN=0, yF=0
+  Object.keys(data).forEach(k=>{
+    const parts=k.split("-").map(Number)
+    const d=new Date(parts[0], parts[1]-1, parts[2])
+    if(d.getFullYear()!==year) return
+    const shift=(data[k]||{}).shift
+    const wd=mondayIndex(d)
+    if(nightPay(shift,wd)) yN++
+    else if(fivePay(shift,wd,d.getDay())) yF++
+  })
+  document.getElementById("yearNights").innerText=`Νύχτες έτους: ${yN} × 20,35€ = ${(yN*20.35).toFixed(2)}€`
+  document.getElementById("yearFives").innerText=`5μερα έτους: ${yF} × 36,06€ = ${(yF*36.06).toFixed(2)}€`
+  document.getElementById("yearTotal").innerText=`Σύνολο έτους: ${((yN*20.35)+(yF*36.06)).toFixed(2)}€`
+}
+
+function openCopy(len){
+copyLen=len
+document.getElementById("copytitle").innerText="ΑΠΟ... ("+len+" ΗΜΕΡΕΣ)"
+document.getElementById("modalbg").style.display="flex"
+}
+function closeCopy(){document.getElementById("modalbg").style.display="none"}
+
+function doCopy(){
+let fromVal=document.getElementById("from").value
+let toVal=document.getElementById("to").value
+if(!fromVal||!toVal)return
+let from=new Date(fromVal)
+let to=new Date(toVal)
+if(to<from){let tmp=from;from=to;to=tmp}
+
+let pattern=[]
+for(let i=0;i<copyLen;i++){
+  let d=new Date(from)
+  d.setDate(d.getDate()+i)
+  pattern.push((data[key(d)]||{}).shift||"")
+}
+
+let cur=new Date(from.getTime())
+let i=0
+while(cur.getTime()<=to.getTime()){
+  let k=key(cur)
+  let obj=data[k]||{}
+  obj.shift=pattern[i % pattern.length]
+  data[k]=obj
+  cur.setDate(cur.getDate()+1)
+  i++
+}
+
+localStorage.setItem(STORE,JSON.stringify(data))
+closeCopy()
+render()
+}
+
+function clearMonth(){
+let last=new Date(year,month+1,0).getDate()
+for(let d=1;d<=last;d++){
+  delete data[key(new Date(year,month,d))]
+}
+localStorage.setItem(STORE,JSON.stringify(data))
+render()
+}
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById("installBtn");
+  btn.style.display = "inline-block";
+  document.getElementById("installText").innerText = "Μπορείς να το εγκαταστήσεις σαν εφαρμογή στο κινητό.";
+});
+
+document.getElementById("installBtn").addEventListener("click", async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById("installBtn").style.display = "none";
+});
+
+render()
+</script>
+
+</body>
+</html>
