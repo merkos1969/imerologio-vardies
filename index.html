@@ -45,7 +45,7 @@ button,input{border:none;border-radius:10px;padding:10px;font-weight:700}
 .install-box{background:#e9f7ef;color:#111;border-radius:16px;padding:12px;margin-top:10px}
 .toolbar{position:fixed;bottom:10px;left:0;right:0;display:flex;justify-content:center}
 .tools{background:#c8102e;border-radius:30px;padding:12px;width:90%;max-width:720px}
-.grid{background:#fff;border-radius:20px;padding:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.grid{background:#fff;border-radius:20px;padding:10px 10px 32px 10px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;position:relative}
 .tool{border-radius:12px;padding:14px;text-align:center;font-weight:800;cursor:pointer}
 .A{background:#ee9574}
 .R{background:#e6c6d7}
@@ -58,6 +58,19 @@ button,input{border:none;border-radius:10px;padding:10px;font-weight:700}
 .modal{background:#fff;color:#000;border-radius:20px;padding:16px;width:90%;max-width:420px}
 .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
 .small{font-size:13px;opacity:.9}
+
+.signature{
+position:absolute;
+right:18px;
+bottom:12px;
+font-size:11px;
+font-weight:800;
+color:#404040;
+opacity:.82;
+letter-spacing:.4px;
+pointer-events:none;
+}
+
 </style>
 </head>
 <body>
@@ -74,6 +87,8 @@ button,input{border:none;border-radius:10px;padding:10px;font-weight:700}
 <div class="controls">
 <button onclick="openCopy(5)">Αντιγραφή 5</button>
 <button onclick="openCopy(10)">Αντιγραφή 10</button>
+<button onclick="quickCopy(5)">Γρήγορη 5</button>
+<button onclick="quickCopy(10)">Γρήγορη 10</button>
 <button onclick="clearMonth()">Σβήσιμο μήνα</button>
 </div>
 
@@ -114,6 +129,7 @@ button,input{border:none;border-radius:10px;padding:10px;font-weight:700}
 <div class="tool P" onclick="setShift('Π')">Π</div>
 <div class="tool PN" onclick="setShift('Π/Ν')">Π/Ν</div>
 <div class="tool" style="background:#eee" onclick="setShift('')">Σβήσ.</div>
+<div class="signature">© Merk-Kerm</div>
 </div>
 </div>
 </div>
@@ -179,6 +195,24 @@ if(s=="ΑΔ")return"AD"
 if(s=="Ρ")return"R"
 if(s=="Π/Ν")return"PN"
 return""
+}
+
+
+function quickCopy(len){
+let pattern=[]
+for(let i=1;i<=len;i++){
+  let d=new Date(year,month,i)
+  pattern.push((data[key(d)]||{}).shift||"")
+}
+let last=new Date(year,month+1,0).getDate()
+for(let d=1; d<=last; d++){
+  let k=key(new Date(year,month,d))
+  let obj=data[k]||{}
+  obj.shift=pattern[(d-1)%pattern.length]
+  data[k]=obj
+}
+localStorage.setItem(STORE,JSON.stringify(data))
+render()
 }
 
 function render(){
