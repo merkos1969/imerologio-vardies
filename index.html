@@ -170,9 +170,9 @@ function setShift(s){currentTool="shift";selectedShift=s}
 function setTool(t){currentTool=t}
 function mondayIndex(d){return(d.getDay()+6)%7} // Mon=0 ... Sun=6
 
-// Δευτέρα-Πέμπτη: Ν ή Π/Ν = νύχτα
+// Όλες οι νύχτες: Ν ή Π/Ν = νύχτα
 function nightPay(s,w){
-  return (s==="Ν"||s==="Π/Ν") && w<=3
+  return (s==="Ν"||s==="Π/Ν")
 }
 
 // Παρασκευή: Ν ή Π/Ν = 5μερο
@@ -249,8 +249,18 @@ for(let d=1;d<=last;d++){
   box.className="day"
 
   if(date.getDay()==0||date.getDay()==6)box.classList.add("weekend")
-  if(nightPay(entry.shift,wd)){box.classList.add("night");nights++}
-  else if(fivePay(entry.shift,wd,date.getDay())){box.classList.add("five");fives++}
+
+  const isNight = nightPay(entry.shift,wd)
+  const isFive = fivePay(entry.shift,wd,date.getDay())
+
+  if(isFive){
+    box.classList.add("five")
+  } else if(isNight){
+    box.classList.add("night")
+  }
+
+  if(isNight) nights++
+  if(isFive) fives++
 
   box.onclick=()=>{
     let obj=data[k]||{}
@@ -306,7 +316,7 @@ function renderYearSummary(){
     const shift=(data[k]||{}).shift
     const wd=mondayIndex(d)
     if(nightPay(shift,wd)) yN++
-    else if(fivePay(shift,wd,d.getDay())) yF++
+    if(fivePay(shift,wd,d.getDay())) yF++
   })
   document.getElementById("yearNights").innerText=`Νύχτες έτους: ${yN} × 20,35€ = ${(yN*20.35).toFixed(2)}€`
   document.getElementById("yearFives").innerText=`5μερα έτους: ${yF} × 36,06€ = ${(yF*36.06).toFixed(2)}€`
