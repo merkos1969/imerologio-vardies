@@ -1,6 +1,6 @@
 {
-  "name": "Ημερολόγιο Βαρδιών",
-  "short_name": "Βάρδιες",
+  "name": "Ημερολόγιο Εξωτερικού Φρουρού",
+  "short_name": "Εξωτ. Φρουρός",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#223247",
